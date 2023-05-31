@@ -22,6 +22,9 @@ class Canvas(QLabel):
         self.last_mouse_pos = QPoint(0, 0)
         self.zoom = 1
         self.window = window
+        self.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding
+        )
         # self.scroll_widget.resize(self, 1000)
         # self.setPixmap(QPixmap(self.image).scaledToWidth(int(self.width())))
 
@@ -114,10 +117,32 @@ class Canvas(QLabel):
         # self.scroll_widget.pixmap().
         # self.repaint()
         # self = Canvas(self.path)
+        if not self.isCanvas:
+            return
         pixmap = QPixmap()
         pixmap.convertFromImage(self.image)
-        self.setPixmap(pixmap.scaledToWidth(int(self.height()*0.9)))
-        pass
+
+        try:
+            rectangle_aspect_ratio = pixmap.width() / pixmap.height()
+            target_aspect_ratio = self.width() / self.height()
+        except ZeroDivisionError:
+            return
+
+        # Determine the scaling factor for width and height
+        if rectangle_aspect_ratio > target_aspect_ratio:
+            scale_factor = self.width() / pixmap.width()
+        else:
+            scale_factor = self.height() / pixmap.height()
+
+        # Calculate the new dimensions of the resized rectangle
+        new_width = int(pixmap.width() * scale_factor * 0.9)
+        new_height = int(pixmap.height() * scale_factor * 0.9)
+
+        self.setPixmap(pixmap.scaled(new_width, new_height))
+
+    def resizeEvent(self, *__args):
+        super().resizeEvent(*__args)
+        self.reload_preview()
 
     def set_palette(self, palette):
         # self.image.load(self.path)
@@ -132,4 +157,3 @@ class Canvas(QLabel):
         # self.scroll_widget.
         # self.image = self.image.convertToFormat(QImage.Format_Indexed8)
         # self.image.fill(QColor(4278190080))
-        self.reload_preview()
